@@ -1,7 +1,7 @@
 require 'highline'
 require 'octokit'
 
-GITHUB_USER = 'benchristel'
+GITHUB_USER = ARGV[0]
 
 class Crawl
   MINIMUM_STARS_TO_QUALIFY_AS_A_GOOD_REPO = 100
