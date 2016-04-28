@@ -24,7 +24,7 @@ class Crawl
       end
       puts "found #{next_repo.name} with #{next_repo.stargazers_count} stars"
 
-      repos[next_repo.name] = [next_repo.stargazers_count, next_repo.size]
+      repos[next_repo.full_name] = [next_repo.stargazers_count, next_repo.size]
 
       if queue_of_repos_to_crawl.size > max_repos
         # we have enough repos! stop crawling for more
@@ -42,7 +42,8 @@ class Crawl
     end
 
     repos.each do |name, stats|
-      puts "#{name} #{stats[0]} #{stats[1]}"
+      stars, size = stats
+      puts "#{name} #{(stars.to_f/size).round(2)} = #{stars}/#{size}"
     end
   end
 
