@@ -9,10 +9,10 @@ class Crawl
 
   def initialize(octokit_github_client)
     @github = octokit_github_client
+    @repos = {} # will map repo name to [stargazer_count, size]
   end
 
   def go(max_repos)
-    repos = {} # will map repo name to [stargazer_count, size]
     queue_of_repos_to_crawl = repos_starred_by(me)
 
     while repos.size < max_repos
@@ -24,7 +24,7 @@ class Crawl
       end
       puts "found #{next_repo.name} with #{next_repo.stargazers_count} stars"
 
-      repos[next_repo.full_name] = [next_repo.stargazers_count, next_repo.size]
+      add next_repo
 
       if queue_of_repos_to_crawl.size > max_repos
         # we have enough repos! stop crawling for more
@@ -41,13 +41,31 @@ class Crawl
       end
     end
 
-    repos.each do |name, stats|
-      stars, size = stats
+    print_repos
+  end
+
+  private
+
+  def repos
+    @repos
+  end
+
+  def print_repos
+    sorted_repos = repos.to_a.sort_by do |repo|
+      stars, size = repo[1]
+      -stars.to_f / size
+    end
+
+    sorted_repos.each do |repo|
+      name = repo[0]
+      stars, size = repo[1]
       puts "#{name} #{(stars.to_f/size).round(2)} = #{stars}/#{size}"
     end
   end
 
-  private
+  def add(repo)
+    repos[repo.full_name] = [repo.stargazers_count, repo.size]
+  end
 
   def good?(repo)
     repo.stargazers_count >= MINIMUM_STARS_TO_QUALIFY_AS_A_GOOD_REPO &&
