@@ -19,10 +19,9 @@ class Crawl
       next_repo = queue_of_repos_to_crawl.shift
 
       if next_repo.nil?
-        puts "Something has gone horribly wrong! We've run out of internet!"
+        STDERR.puts "Something has gone horribly wrong! We've run out of internet!"
         break
       end
-      puts "found #{next_repo.name} with #{next_repo.stargazers_count} stars"
 
       add next_repo
 
@@ -32,12 +31,12 @@ class Crawl
       end
 
       users_who_starred(next_repo).each do |user|
-        puts "considering #{user.login}'s stars..."
         interesting_repos = repos_starred_by(user)
           .select { |repo| !repos.include?(repo) && good?(repo) }
-	puts "found #{interesting_repos.length} interesting repos"
 
         queue_of_repos_to_crawl += interesting_repos
+
+        STDERR.puts "found #{queue_of_repos_to_crawl.length}/#{max_repos} interesting repos"
       end
     end
 
