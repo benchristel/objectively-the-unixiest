@@ -16,7 +16,7 @@ class Repo
   end
 
   def score
-    stars / size
+    stars / (size + 1)
   end
 
   def size

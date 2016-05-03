@@ -2,47 +2,29 @@ require 'highline'
 require 'octokit'
 require 'set'
 require_relative 'lib/repo'
+require_relative 'lib/repo_filter'
+require_relative 'lib/repo_finder'
 
 GITHUB_USER = ARGV[0]
 
 class Crawl
   def initialize(octokit_github_client)
     @github = octokit_github_client
-    @repos = Set.new
   end
 
   def go(max_repos)
-    queue_of_repos_to_crawl =
-      Repo.starred_by(me)
+    count = 0
 
-    while true
-      next_repo = queue_of_repos_to_crawl.shift
-
-      next_repo.stargazers.each do |user|
-        awesome_new_repos =
-	  Repo.starred_by(user)
-	  .reject { |r| repos.include? r }
-          .select(&:awesome?)
-
-        awesome_new_repos.each { |repo|
-	  puts repo
-	  add repo
-	  return if repos.size >= max_repos
-	}
-
-        queue_of_repos_to_crawl += awesome_new_repos
-      end
+    find_awesome_repos.each do |repo|
+      puts repo
+      break if count == max_repos
     end
   end
 
   private
 
-  def repos
-    @repos
-  end
-
-  def add(repo)
-    repos << repo
+  def find_awesome_repos
+    RepoFilter.new(RepoFinder.crawling_from_user(me))
   end
 
   def me
@@ -50,7 +32,7 @@ class Crawl
   end
 end
 
-cli = HighLine.new
+cli = HighLine.new(STDIN, STDERR)
 password = cli.ask("github password for #{GITHUB_USER}:") { |q| q.echo = '*' }
 
 github_client = Octokit::Client.new(
@@ -58,4 +40,4 @@ github_client = Octokit::Client.new(
   password: password
 )
 
-Crawl.new(github_client).go(100)
+Crawl.new(github_client).go(500)

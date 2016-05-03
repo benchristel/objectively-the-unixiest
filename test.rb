@@ -2,8 +2,18 @@ require 'minitest/autorun'
 require 'ostruct'
 require 'set'
 require_relative 'lib/repo'
+require_relative 'lib/repo_filter'
+require_relative 'lib/repo_finder'
 
-class CrawlerTest < Minitest::Test
+module UsesDoubles
+  def double(hash)
+    OpenStruct.new(hash)
+  end
+end
+
+class Repotest < Minitest::Test
+  include UsesDoubles
+
   def test_awesome_repo
     fake_octokit_repo = double(stargazers_count: 1000, size: 1)
     assert Repo.new(fake_octokit_repo).awesome?
@@ -12,6 +22,11 @@ class CrawlerTest < Minitest::Test
   def test_meh_repo
     fake_octokit_repo = double(stargazers_count: 1, size: 1)
     refute Repo.new(fake_octokit_repo).awesome?
+  end
+
+  def test_checking_awesomeness_avoids_division_by_zero
+    fake_octokit_repo = double(stargazers_count: 101, size: 0)
+    assert Repo.new(fake_octokit_repo).awesome?
   end
 
   def test_repo_has_a_name
@@ -38,7 +53,7 @@ class CrawlerTest < Minitest::Test
 
     repo = Repo.new(fake_octokit_repo)
 
-    assert_equal 'joeschmo/rails 50 1000 20', repo.to_s
+    assert_equal 'joeschmo/rails 47 1000 20', repo.to_s
   end
 
   def test_getting_a_users_starred_repos
@@ -76,10 +91,123 @@ class CrawlerTest < Minitest::Test
     assert_equal 1, set.size
     refute set.include? scientist
   end
+end
 
-  private
+class RepoFilterTest < Minitest::Test
+  include UsesDoubles
 
-  def double(hash)
-    OpenStruct.new(hash)
+  def test_it_excludes_nonawesome_repos
+    awesome1 = double(awesome?: true)
+    awesome2 = double(awesome?: true)
+    meh = double(awesome?: false)
+
+    yielded = []
+    RepoFilter.new([awesome1, meh, awesome2]).each do |repo|
+      yielded << repo
+    end
+
+    assert yielded.include? awesome1
+    assert yielded.include? awesome2
+    refute yielded.include? meh
+  end
+
+  def test_it_yields_repos_only_once
+    awesome   = double(awesome?: true, name: 'scientist')
+    duplicate = double(awesome?: true, name: 'scientist')
+
+    yielded = []
+    RepoFilter.new([awesome, duplicate]).each do |repo|
+      yielded << repo
+    end
+
+    assert yielded.include? awesome
+    assert_equal 1, yielded.size
+  end
+end
+
+class RepoFinderTest < Minitest::Test
+  include UsesDoubles
+
+  def test_it_finds_repos_starred_by_a_user
+    repos = [
+      double(full_name: 'hector/g'),
+      double(full_name: 'joeschmo/rails'),
+      double(full_name: 'paxicorn/whaddayamean')
+    ]
+
+    user = double(
+      rels: {
+        starred: double(
+          get: double(data: repos)
+        )
+      }
+    )
+
+    count = 0
+    yielded = []
+    RepoFinder.crawling_from_user(user).each do |repo|
+      yielded << repo
+      count += 1
+      break if count == 3
+    end
+
+    assert_equal 3, yielded.size
+    assert yielded.map(&:name).include? 'hector/g'
+  end
+
+  def test_it_traverses_the_star_graph
+    hector = double(
+      login: 'hector',
+      rels: {}
+    )
+
+    paxicorn = double(
+      login: 'paxicorn',
+      rels: {}
+    )
+
+    g = double(
+      full_name: 'hector/g',
+      rels: {
+        stargazers: double(
+          get: double(data: [hector])
+        )
+      }
+    )
+
+    rails = double(
+      full_name: 'joeschmo/rails',
+      rels: {
+        stargazers: double(
+          get: double(data: [hector, paxicorn])
+        )
+      }
+    )
+
+    whaddayamean = double(
+      full_name: 'paxicorn/whaddayamean',
+      rels: {
+        stargazers: double(
+          get: double(data: [paxicorn])
+        )
+      }
+    )
+
+    hector.rels[:starred] = double(
+      get: double(data: [g, rails])
+    )
+
+    paxicorn.rels[:starred] = double(
+      get: double(data: [whaddayamean, rails])
+    )
+
+    yielded = []
+    RepoFinder.crawling_from_user(hector).each do |repo|
+      yielded << repo
+    end
+
+    assert yielded.map(&:name).include? 'hector/g'
+    assert yielded.map(&:name).include? 'joeschmo/rails'
+    assert yielded.map(&:name).include? 'paxicorn/whaddayamean'
   end
 end
