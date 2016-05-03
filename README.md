@@ -13,5 +13,6 @@ You'll need:
 
 ```bash
 bundle # installs the dependencies - one-time setup
-ruby crawl.rb <github username>
+ruby crawl.rb [github username] | ruby sort.rb > repos.txt
 ```
+
