@@ -1,4 +1,37 @@
 require_relative 'repo'
+require 'octokit'
+
+class CrawlQueue
+	def initialize
+		@queue = []
+	end
+
+	def enqueue(user_or_repo)
+		@queue << user_or_repo
+	end
+
+	def dequeue
+		thing = @queue.shift
+		if userish? thing
+			return thing
+		elsif repoish? thing
+			@queue = thing.stargazers + @queue
+			return dequeue
+		else
+			return nil
+		end
+	end
+
+	private
+
+	def userish?(thing)
+		thing.respond_to?(:login) && thing.login
+	end
+
+	def repoish?(thing)
+		thing.respond_to? :stargazers
+	end
+end
 
 class RepoFinder
 	def self.crawling_from_user(user)
@@ -7,34 +40,29 @@ class RepoFinder
 
 	def initialize(user, visited_users)
 		@user = user
-		@visited_users = visited_users
-		visited_users << user.login
 	end
 
 	def each
-		repos = Set.new
+		@visited_users = Set.new
+		queue = CrawlQueue.new
+		queue.enqueue(@user)
 
-		repos_starred_by_user.each do |repo|
-			yield repo
-			repos << repo
-		end
-
-		repos.each do |repo|
-			not_visited(repo.stargazers).each do |user|
-				RepoFinder.new(user, @visited_users).each do |repo|
-					yield repo
-				end
+		while user = queue.dequeue
+			next if visited? user
+			visit user
+			starred_repos = Repo.starred_by user
+			starred_repos.each do |repo|
+				yield repo
+				queue.enqueue(repo)
 			end
 		end
 	end
 
-	def repos_starred_by_user
-		@user.rels[:starred].get.data.map(&Repo.method(:new))
+	def visit(user)
+		@visited_users << user.login
 	end
 
-	def not_visited(users)
-		users.reject do |u|
-			@visited_users.include? u.login
-		end
+	def visited?(user)
+		@visited_users.include? user.login
 	end
 end

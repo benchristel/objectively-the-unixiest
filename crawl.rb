@@ -17,8 +17,10 @@ class Crawl
 
     find_awesome_repos.each do |repo|
       puts repo
+      count += 1
       break if count == max_repos
     end
+    STDERR.puts "\ndone!"
   end
 
   private
@@ -40,4 +42,4 @@ github_client = Octokit::Client.new(
   password: password
 )
 
-Crawl.new(github_client).go(500)
+Crawl.new(github_client).go(20)

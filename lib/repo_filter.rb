@@ -4,7 +4,8 @@ class RepoFilter
 	# Removes duplicate and non-awesome repos from the given
 	# enumerable.
 
-	def initialize(enumerable)
+	def initialize(enumerable, options={})
+		@logger = options[:logger] || STDERR
 		@enumerable = enumerable
 		@seen = Set.new
 	end
@@ -38,6 +39,6 @@ class RepoFilter
 
 	def print_status(total_count, awesome_count)
 		percentage = (awesome_count.to_f / total_count * 100).round(1)
-		STDERR.print "  #{total_count} repos crawled, #{percentage}% awesome   \r"
+		@logger.print "  #{total_count} repos crawled, #{percentage}% awesome   \r"
 	end
 end

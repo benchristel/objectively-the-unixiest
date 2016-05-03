@@ -96,13 +96,17 @@ end
 class RepoFilterTest < Minitest::Test
   include UsesDoubles
 
+  class NullLogger
+    def print(s); end
+  end
+
   def test_it_excludes_nonawesome_repos
     awesome1 = double(awesome?: true)
     awesome2 = double(awesome?: true)
     meh = double(awesome?: false)
 
     yielded = []
-    RepoFilter.new([awesome1, meh, awesome2]).each do |repo|
+    RepoFilter.new([awesome1, meh, awesome2], logger: NullLogger.new).each do |repo|
       yielded << repo
     end
 
@@ -116,7 +120,7 @@ class RepoFilterTest < Minitest::Test
     duplicate = double(awesome?: true, name: 'scientist')
 
     yielded = []
-    RepoFilter.new([awesome, duplicate]).each do |repo|
+    RepoFilter.new([awesome, duplicate], logger: NullLogger.new).each do |repo|
       yielded << repo
     end
 
@@ -136,6 +140,7 @@ class RepoFinderTest < Minitest::Test
     ]
 
     user = double(
+      login: 'phooie',
       rels: {
         starred: double(
           get: double(data: repos)
