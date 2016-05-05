@@ -2,11 +2,14 @@ require_relative 'repo'
 require 'octokit'
 
 class CrawlQueue
+	QUEUE_LIMIT=1000
+
 	def initialize
 		@queue = []
 	end
 
 	def enqueue(user_or_repo)
+		return if @queue.length > QUEUE_LIMIT
 		@queue << user_or_repo
 	end
 

@@ -30,11 +30,11 @@ class RepoFilter
 
 	private
 	def not_seen_before?(repo)
-		not @seen.include?(repo)
+		not @seen.include?(repo.name)
 	end
 
 	def mark_as_seen(repo)
-		@seen << repo
+		@seen << repo.name
 	end
 
 	def print_status(total_count, awesome_count)

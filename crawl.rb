@@ -42,4 +42,4 @@ github_client = Octokit::Client.new(
   password: password
 )
 
-Crawl.new(github_client).go(20)
+Crawl.new(github_client).go(450)
