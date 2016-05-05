@@ -1,18 +1,10 @@
 class Repo
-  MINIMUM_STARS = 100
-  MINIMUM_SCORE = 10
-
   def initialize(octokit_repo)
     @octokit_repo = octokit_repo
   end
 
   def self.starred_by(octokit_user)
     octokit_user.rels[:starred].get.data.map(&method(:new))
-  end
-
-  def awesome?
-    stars > MINIMUM_STARS &&
-      score > MINIMUM_SCORE
   end
 
   def score

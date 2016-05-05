@@ -11,6 +11,7 @@ GEM
     sawyer (0.6.0)
       addressable (~> 2.3.5)
       faraday (~> 0.8, < 0.10)
+    trollop (2.1.2)
 
 PLATFORMS
   ruby
@@ -18,3 +19,4 @@ PLATFORMS
 DEPENDENCIES
   highline
   octokit
+  trollop

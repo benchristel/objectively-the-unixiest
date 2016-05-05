@@ -8,6 +8,7 @@ class RepoFilter
 		@logger = options[:logger] || STDERR
 		@enumerable = enumerable
 		@seen = Set.new
+		@options = options
 	end
 
 	def each
@@ -18,7 +19,7 @@ class RepoFilter
 			if not_seen_before?(repo)
 				total_count += 1
 
-				if repo.awesome?
+				if awesome? repo
 					awesome_count += 1
 					print_status(total_count, awesome_count)
 					yield repo
@@ -40,5 +41,17 @@ class RepoFilter
 	def print_status(total_count, awesome_count)
 		percentage = (awesome_count.to_f / total_count * 100).round(1)
 		@logger.print "  #{total_count} repos crawled, #{percentage}% awesome   \r"
+	end
+
+	def awesome?(repo)
+		repo.score >= min_score && repo.stars >= min_stars
+	end
+
+	def min_score
+		@options[:min_score]
+	end
+
+	def min_stars
+		@options[:min_stars]
 	end
 end

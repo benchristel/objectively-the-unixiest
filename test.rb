@@ -14,19 +14,9 @@ end
 class Repotest < Minitest::Test
   include UsesDoubles
 
-  def test_awesome_repo
-    fake_octokit_repo = double(stargazers_count: 1000, size: 1)
-    assert Repo.new(fake_octokit_repo).awesome?
-  end
-
-  def test_meh_repo
-    fake_octokit_repo = double(stargazers_count: 1, size: 1)
-    refute Repo.new(fake_octokit_repo).awesome?
-  end
-
-  def test_checking_awesomeness_avoids_division_by_zero
+  def test_checking_score_avoids_division_by_zero
     fake_octokit_repo = double(stargazers_count: 101, size: 0)
-    assert Repo.new(fake_octokit_repo).awesome?
+    assert_equal 101, Repo.new(fake_octokit_repo).score
   end
 
   def test_repo_has_a_name
@@ -101,26 +91,28 @@ class RepoFilterTest < Minitest::Test
   end
 
   def test_it_excludes_nonawesome_repos
-    awesome1 = double(awesome?: true)
-    awesome2 = double(awesome?: true)
-    meh = double(awesome?: false)
+    awesome1 = double(stars: 100, score: 10, name: 'a')
+    awesome2 = double(stars: 200, score: 20, name: 'b')
+    meh1 = double(stars: 200, score: 9, name: 'c')
+    meh2 = double(stars: 99, score: 10, name: 'd')
 
     yielded = []
-    RepoFilter.new([awesome1, meh, awesome2], logger: NullLogger.new).each do |repo|
+    RepoFilter.new([awesome1, meh1, awesome2, meh2], logger: NullLogger.new, min_stars: 100, min_score: 10).each do |repo|
       yielded << repo
     end
 
     assert yielded.include? awesome1
     assert yielded.include? awesome2
-    refute yielded.include? meh
+    refute yielded.include? meh1
+    refute yielded.include? meh2
   end
 
   def test_it_yields_repos_only_once
-    awesome   = double(awesome?: true, name: 'scientist')
-    duplicate = double(awesome?: true, name: 'scientist')
+    awesome   = double(score: 10, stars: 100, name: 'scientist')
+    duplicate = double(score: 10, stars: 100, name: 'scientist')
 
     yielded = []
-    RepoFilter.new([awesome, duplicate], logger: NullLogger.new).each do |repo|
+    RepoFilter.new([awesome, duplicate], logger: NullLogger.new, min_stars: 100, min_score: 10).each do |repo|
       yielded << repo
     end
 
