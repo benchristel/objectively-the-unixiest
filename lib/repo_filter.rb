@@ -44,7 +44,9 @@ class RepoFilter
 	end
 
 	def awesome?(repo)
-		repo.score >= min_score && repo.stars >= min_stars
+		repo.score >= min_score && 
+			repo.stars >= min_stars &&
+			repo.language == language
 	end
 
 	def min_score
@@ -53,5 +55,9 @@ class RepoFilter
 
 	def min_stars
 		@options[:min_stars]
+	end
+
+	def language
+		@options[:language]
 	end
 end

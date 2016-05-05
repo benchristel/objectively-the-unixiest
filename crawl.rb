@@ -19,7 +19,7 @@ cli_options = Trollop.options do
     type: :integer,
     default: 10
 
-  opt :language, "Output only repos written in these languages (comma-separated)", 
+  opt :language, "Output only repos written in this language", 
     type: :string, 
     default: ''
 end

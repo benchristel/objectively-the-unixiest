@@ -19,6 +19,10 @@ class Repo
     @octokit_repo.stargazers_count
   end
 
+  def language
+    @octokit_repo.language
+  end
+
   def stargazers
     @octokit_repo.rels[:stargazers].get.data
   end

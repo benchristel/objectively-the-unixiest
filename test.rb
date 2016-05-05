@@ -24,6 +24,11 @@ class Repotest < Minitest::Test
     assert_equal 'joeschmo/rails', Repo.new(fake_octokit_repo).name
   end
 
+  def test_repo_has_a_language
+    fake_octokit_repo = double(language: 'Ruby')
+    assert_equal 'Ruby', Repo.new(fake_octokit_repo).language
+  end
+
   def test_repo_has_stargazers
     fake_octokit_repo = double(rels: {
       stargazers: double(get: double(data: [1,2,3]))
@@ -105,6 +110,23 @@ class RepoFilterTest < Minitest::Test
     assert yielded.include? awesome2
     refute yielded.include? meh1
     refute yielded.include? meh2
+  end
+
+  def test_it_filters_repos_by_language
+    ruby = double(stars: 100, score: 10, name: 'a', language: 'Ruby')
+    js = double(stars: 100, score: 10, name: 'b', language: 'JavaScript')
+
+    yielded = []
+    RepoFilter.new([ruby, js], 
+        logger: NullLogger.new, 
+        min_stars: 100, 
+        min_score: 10,
+        language:  'Ruby').each do |repo|
+      yielded << repo
+    end
+
+    assert yielded.include? ruby
+    refute yielded.include? js
   end
 
   def test_it_yields_repos_only_once
