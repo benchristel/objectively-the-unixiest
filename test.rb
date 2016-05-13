@@ -129,6 +129,23 @@ class RepoFilterTest < Minitest::Test
     refute yielded.include? js
   end
 
+  def test_it_does_not_filter_by_language_when_language_is_empty
+    ruby = double(stars: 100, score: 10, name: 'a', language: 'Ruby')
+    js = double(stars: 100, score: 10, name: 'b', language: 'JavaScript')
+
+    yielded = []
+    RepoFilter.new([ruby, js], 
+        logger: NullLogger.new, 
+        min_stars: 100, 
+        min_score: 10,
+        language:  '').each do |repo|
+      yielded << repo
+    end
+
+    assert yielded.include? ruby
+    assert yielded.include? js
+  end
+
   def test_it_yields_repos_only_once
     awesome   = double(score: 10, stars: 100, name: 'scientist')
     duplicate = double(score: 10, stars: 100, name: 'scientist')

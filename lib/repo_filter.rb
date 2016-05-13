@@ -46,7 +46,11 @@ class RepoFilter
 	def awesome?(repo)
 		repo.score >= min_score && 
 			repo.stars >= min_stars &&
-			repo.language == language
+			matches_language?(repo)
+	end
+
+	def matches_language?(repo)
+		language == '' || repo.language == language
 	end
 
 	def min_score
